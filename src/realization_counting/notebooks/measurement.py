@@ -22,15 +22,15 @@ def _():
     import polars as pl
     from pyrigi.graph._rigidity.realization_counting import number_of_realizations
 
-    from diploma_thesis.edge_selection import TrivialBiedgeSelector
-    from diploma_thesis.measurement_helpers import (
+    from realization_counting.edge_selection import TrivialBiedgeSelector
+    from realization_counting.measurement_helpers import (
         measure_graph_function,
         read_graphs_up_to,
     )
-    from diploma_thesis.realization_counting_env import (
+    from realization_counting.realization_counting_env import (
         RealizationCountingEnvironment,
     )
-    from diploma_thesis.zenodo_download import download_min_rigid_graphs
+    from realization_counting.zenodo_download import download_min_rigid_graphs
 
     return (
         Path,
