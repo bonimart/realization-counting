@@ -11,6 +11,7 @@ def _(mo):
 
     This notebook measures execution time of the existing `number_of_realizations` function from `pyrigi`.
     """)
+    return
 
 
 @app.cell
@@ -49,10 +50,10 @@ def _():
 @app.cell
 def _(mo):
     n_nodes_slider = mo.ui.slider(
-        start=7,
-        stop=9,
+        start=8,
+        stop=10,
         step=1,
-        value=7,
+        value=9,
         label="Maximum number of nodes of minimally 2-rigid graphs to count realizations for: ",
         show_value=True,
     )
@@ -87,11 +88,13 @@ def _(df, mo):
     mo.md(f"""
     Total execution time: {df.select("execution_time_ms").sum().item() / 1000:.2f} s
     """)
+    return
 
 
 @app.cell
 def _(df):
     df.select("execution_time_ms").describe()
+    return
 
 
 @app.cell
@@ -107,6 +110,7 @@ def _(alt, df):
         ),
         y="count()",
     ).interactive()
+    return
 
 
 @app.cell(hide_code=True)
@@ -120,6 +124,7 @@ def _(mo):
 
     Intuitively, edge selection in early recursion calls (with bigger bigraphs) should have bigger impact on execution time.
     """)
+    return
 
 
 @app.cell
@@ -154,6 +159,7 @@ def _(df_with_rec_steps):
             "weighted_rec_steps",
         ]
     ).corr(label="cols").select(["cols", "execution_time_ms"])
+    return
 
 
 @app.cell
@@ -165,6 +171,13 @@ def _(alt, df_with_rec_steps):
     c3 = base.encode(x="function_result", y="execution_time_ms")
 
     (c1 | c2 | c3).interactive()
+    return
+
+
+@app.cell
+def _(df_with_rec_steps, n_nodes_slider):
+    df_with_rec_steps.write_csv(f"data/measurement_{n_nodes_slider.value}.csv")
+    return
 
 
 if __name__ == "__main__":

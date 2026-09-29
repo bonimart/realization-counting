@@ -12,8 +12,8 @@ from pyrigi.graph._rigidity.realization_counting import (
     _graph_to_bigraph,
 )
 
-from diploma_thesis.bigraph import Bigraph
-from diploma_thesis.edge_selection import BiedgeSelector
+from realization_counting.bigraph import Bigraph
+from realization_counting.edge_selection import BiedgeSelector
 
 
 @dataclass

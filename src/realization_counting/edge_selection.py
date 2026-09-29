@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from diploma_thesis.bigraph import BiedgeId, Bigraph
+from realization_counting.bigraph import BiedgeId, Bigraph
 
 
 class BiedgeSelector(ABC):
