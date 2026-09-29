@@ -1,0 +1,8 @@
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.16.8"
+hooks = [{ id = "ruff", args = ["--fix"] }, { id = "ruff-format" }]
+[[repos]]
+repo = "https://github.com/astral-sh/ty-pre-commit"
+rev = "v0.0.83"
+hooks = [{ id = "ty" }]
