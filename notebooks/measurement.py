@@ -27,6 +27,7 @@ def _():
     from realization_counting.measurement_helpers import (
         measure_graph_function,
         read_graphs_up_to,
+        filter_zero_deletions
     )
     from realization_counting.realization_counting_env import (
         RealizationCountingEnvironment,
@@ -39,6 +40,7 @@ def _():
         TrivialBiedgeSelector,
         alt,
         download_min_rigid_graphs,
+        filter_zero_deletions,
         measure_graph_function,
         mo,
         number_of_realizations,
@@ -53,7 +55,7 @@ def _(mo):
         start=8,
         stop=10,
         step=1,
-        value=9,
+        value=8,
         label="Maximum number of nodes of minimally 2-rigid graphs to count realizations for: ",
         show_value=True,
     )
@@ -62,11 +64,18 @@ def _(mo):
 
 
 @app.cell
-def _(Path, download_min_rigid_graphs, mo, n_nodes_slider, read_graphs_up_to):
+def _(
+    Path,
+    download_min_rigid_graphs,
+    filter_zero_deletions,
+    mo,
+    n_nodes_slider,
+    read_graphs_up_to,
+):
     if not Path("data/").exists():
         download_min_rigid_graphs()
     try:
-        graphs = list(read_graphs_up_to(n_nodes_slider.value))
+        graphs = filter_zero_deletions(read_graphs_up_to(n_nodes_slider.value))
     except FileNotFoundError as e:
         mo.stop(
             True,

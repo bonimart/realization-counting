@@ -1,4 +1,5 @@
 import itertools
+from pyrigi.graph._general import min_degree
 import time
 import typing
 from dataclasses import dataclass
@@ -84,3 +85,11 @@ def measure_graph_function(
             )
         )
     return results
+
+
+def filter_zero_deletions(graphs: typing.Iterable[nx.Graph]) -> list[nx.Graph]:
+    return [
+        graph
+        for graph in graphs
+        if graph.number_of_nodes() > 2 and min_degree(graph) > 2
+    ]
