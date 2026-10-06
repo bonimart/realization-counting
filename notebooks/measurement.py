@@ -23,7 +23,7 @@ def _():
     import polars as pl
     from pyrigi.graph._rigidity.realization_counting import number_of_realizations
 
-    from realization_counting.edge_selection import TrivialBiedgeSelector
+    from realization_counting.edge_selection import FirstBiedgeSelector, LastBiedgeSelector, RandomBiedgeSelector
     from realization_counting.measurement_helpers import (
         measure_graph_function,
         read_graphs_up_to,
@@ -35,9 +35,11 @@ def _():
     from realization_counting.zenodo_download import download_min_rigid_graphs
 
     return (
+        FirstBiedgeSelector,
+        LastBiedgeSelector,
         Path,
+        RandomBiedgeSelector,
         RealizationCountingEnvironment,
-        TrivialBiedgeSelector,
         alt,
         download_min_rigid_graphs,
         filter_zero_deletions,
@@ -85,10 +87,21 @@ def _(
 
 
 @app.cell
-def _(graphs, measure_graph_function, mo, number_of_realizations, pl):
-    with mo.persistent_cache("execution_time"):
+def _(
+    Path,
+    graphs,
+    measure_graph_function,
+    n_nodes_slider,
+    number_of_realizations,
+    pl,
+):
+    exec_time_fname = Path(f"data/execution_time_{n_nodes_slider.value}.csv")
+    if not exec_time_fname.exists():
         results = measure_graph_function(graphs, number_of_realizations)
         df = pl.DataFrame(results)
+        df.write_csv(exec_time_fname)
+    else:
+        df = pl.read_csv(exec_time_fname)
     return (df,)
 
 
@@ -137,24 +150,34 @@ def _(mo):
 
 
 @app.cell
-def _(RealizationCountingEnvironment, TrivialBiedgeSelector, graphs, mo):
-    with mo.persistent_cache("rec_steps"):
+def _(FirstBiedgeSelector, RealizationCountingEnvironment, pl, pyrigi):
+    def measure_rec_steps(graphs: list[pyrigi.Graph]) -> pl.DataFrame:
         costs = []
         for graph in graphs:
             env = RealizationCountingEnvironment(
-                graph, biedge_selector=TrivialBiedgeSelector()
+                graph, biedge_selector=FirstBiedgeSelector()
             )
             cost = env.evaluate()
             costs.append(cost)
-    return (costs,)
+        return pl.DataFrame({"weighted_rec_steps": [cost.weighted for cost in costs], "unweighted_rec_steps": [cost.unweighted for cost in costs]})
+
+    return (measure_rec_steps,)
 
 
 @app.cell
-def _(costs, df, pl):
-    df_with_rec_steps = df.with_columns(
-        pl.Series([cost.weighted for cost in costs]).alias("weighted_rec_steps"),
-        pl.Series([cost.unweighted for cost in costs]).alias("unweighted_rec_steps"),
-    )
+def _(Path, graphs, measure_rec_steps, n_nodes_slider, pl):
+    rec_steps_fname = Path(f"data/rec_steps_{n_nodes_slider.value}.csv")
+    if not rec_steps_fname.exists():
+        rec_steps_df = measure_rec_steps(graphs)
+        rec_steps_df.write_csv(rec_steps_fname)
+    else:
+        rec_steps_df = pl.read_csv(rec_steps_fname)
+    return (rec_steps_df,)
+
+
+@app.cell
+def _(df, rec_steps_df):
+    df_with_rec_steps = df.hstack(rec_steps_df)
     return (df_with_rec_steps,)
 
 
@@ -183,9 +206,64 @@ def _(alt, df_with_rec_steps):
     return
 
 
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ## Edge selection algorithm comparison
+
+    We will measure 3 trivial approaches of edge selection in terms of weighted recursion step count:
+
+    1. Selecting first edge
+    2. Selecting last edge
+    3. Selecting a random edge
+    """)
+    return
+
+
 @app.cell
-def _(df_with_rec_steps, n_nodes_slider):
-    df_with_rec_steps.write_csv(f"data/measurement_{n_nodes_slider.value}.csv")
+def _(
+    FirstBiedgeSelector,
+    LastBiedgeSelector,
+    RandomBiedgeSelector,
+    RealizationCountingEnvironment,
+    pl,
+    pyrigi,
+):
+    def measure_selectors(graphs: list[pyrigi.Graph]) -> pl.DataFrame:
+        data = {}
+        selectors = [
+            ("first", FirstBiedgeSelector()),
+            ("last", LastBiedgeSelector()),
+            ("random", RandomBiedgeSelector(seed=42))
+        ]
+        for name, selector in selectors:
+            weighted_rec_steps = []
+            for graph in graphs:
+                env = RealizationCountingEnvironment(
+                    graph, biedge_selector=selector
+                )
+                cost = env.evaluate()
+                weighted_rec_steps.append(cost.weighted)
+            data[name] = weighted_rec_steps
+        return pl.DataFrame(data)
+
+    return (measure_selectors,)
+
+
+@app.cell
+def _(Path, graphs, measure_selectors, n_nodes_slider, pl):
+    selector_fname = Path(f"data/selector_{n_nodes_slider.value}.csv")
+    if not selector_fname.exists():
+        selector_df = measure_selectors(graphs)
+        selector_df.write_csv(selector_fname)
+    else:
+        selector_df = pl.read_csv(selector_fname)
+    return (selector_df,)
+
+
+@app.cell
+def _(selector_df):
+    selector_df.describe()
     return
 
 
