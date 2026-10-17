@@ -11,6 +11,9 @@ from unittest.mock import patch
 import polars as pl
 import pyrigi
 
+from realization_counting.bigraph import Bigraph
+from realization_counting.edge_selection import BiedgeSelector
+
 
 @dataclass
 class RecursionStats:
@@ -53,10 +56,20 @@ def track_recursion[**P, R](
             finally:
                 stats._depth -= 1
 
-        wrapper.stats = stats
+        wrapper.stats = stats  # ty: ignore[unresolved-attribute]
         return typing.cast(TrackedFunction[P, R], wrapper)
 
     return decorator
+
+
+@contextmanager
+def patched[F: typing.Callable[..., typing.Any]](
+    module: ModuleType, name: str, decorator: typing.Callable[[F], F]
+) -> typing.Iterator[F]:
+    """Replace `module.name` with `decorator(module.name)` so recursive calls go through it too."""
+    func = decorator(getattr(module, name))
+    with patch.object(module, name, func):
+        yield func
 
 
 @contextmanager
@@ -65,9 +78,7 @@ def tracked(
     name: str,
     weight: typing.Callable[..., int] = lambda *args, **kwargs: 1,
 ) -> typing.Iterator[RecursionStats]:
-    """Patch `module.name` with a tracked version so recursive calls are counted too."""
-    func = track_recursion(weight)(getattr(module, name))
-    with patch.object(module, name, func):
+    with patched(module, name, track_recursion(weight)) as func:
         yield func.stats
 
 
@@ -109,3 +120,21 @@ def measurements_to_dataframe(measurements: list[Measurement]) -> pl.DataFrame:
         .unnest("recursion_stats")
         .drop("_depth")  # internal counter, always 0 after a call returns
     )
+
+
+def select_first_with(selector: BiedgeSelector):
+    """Move the selected biedge to index 0, where pyrigi's recursion branches on it."""
+
+    def decorator[**P, R](
+        func: typing.Callable[typing.Concatenate[Bigraph, P], R],
+    ) -> typing.Callable[typing.Concatenate[Bigraph, P], R]:
+        @functools.wraps(func)
+        def wrapper(bigraph: Bigraph, *args: P.args, **kwargs: P.kwargs) -> R:
+            if len(bigraph) < 2:  # base case, nothing to select
+                return func(bigraph, *args, **kwargs)
+            i = selector(bigraph)
+            return func([bigraph[i], *bigraph[:i], *bigraph[i + 1 :]], *args, **kwargs)
+
+        return wrapper
+
+    return decorator

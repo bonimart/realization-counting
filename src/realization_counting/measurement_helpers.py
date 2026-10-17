@@ -1,12 +1,10 @@
 import itertools
-from pyrigi.graph._general import min_degree
-import time
 import typing
-from dataclasses import dataclass
 from pathlib import Path
 
 import networkx as nx
 import pyrigi
+from pyrigi.graph._general import min_degree
 
 
 def read_graphs_from_nums(
@@ -47,47 +45,8 @@ def read_graphs_up_to(
         yield from read_graphs_from_nums(dir / f"LamanGraphs{n}.txt", n)
 
 
-def time_graph_function(
-    graph: pyrigi.Graph, func: typing.Callable[[pyrigi.Graph], typing.Any]
-) -> tuple[float, typing.Any]:
-    """Times a function on a graph. Returns execution time in seconds."""
-    start_time = time.perf_counter()
-    result = func(graph)
-    return time.perf_counter() - start_time, result
-
-
-@dataclass
-class MeasurementResult:
-    graph_index: int
-    function_result: typing.Any
-    execution_time_ms: float
-
-
-def measure_graph_function(
-    graphs: typing.Iterable[pyrigi.Graph],
-    func: typing.Callable[[pyrigi.Graph], typing.Any],
-    limit: int | None = None,
-) -> list:
-    """
-    Measures execution time of a given function on a list of input graphs.
-    If optional parameter `limit` is given, only the first `limit` graphs will be used for measurement.
-    """
-    results: list[MeasurementResult] = []
-    if limit is not None:
-        graphs = itertools.islice(graphs, limit)
-    for i, graph in enumerate(graphs):
-        measured_time, func_result = time_graph_function(graph, func)
-        results.append(
-            MeasurementResult(
-                graph_index=i,
-                function_result=func_result,
-                execution_time_ms=measured_time * 1_000,
-            )
-        )
-    return results
-
-
 def filter_zero_deletions(graphs: typing.Iterable[nx.Graph]) -> list[nx.Graph]:
+    """Filters out minimally rigid graphs constructed solely by 0-expansion."""
     return [
         graph
         for graph in graphs
