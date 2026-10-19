@@ -2,7 +2,7 @@ import functools
 import itertools
 import time
 import typing
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from copy import deepcopy
 from dataclasses import asdict, dataclass, field
 from types import ModuleType
@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import polars as pl
 import pyrigi
+import pyrigi.graph._rigidity.realization_counting as rc
 
 from realization_counting.bigraph import Bigraph
 from realization_counting.edge_selection import BiedgeSelector
@@ -38,7 +39,7 @@ class TrackedFunction[**P, R](typing.Protocol):
 
 
 def track_recursion[**P, R](
-    weight: typing.Callable[..., int] = lambda *args, **kwargs: 1,
+    weight: typing.Callable[..., int] = lambda *_, **__: 1,
 ) -> typing.Callable[[typing.Callable[P, R]], TrackedFunction[P, R]]:
     """Count calls to the decorated function and sum a per-call weight."""
 
@@ -65,7 +66,7 @@ def track_recursion[**P, R](
 @contextmanager
 def patched[F: typing.Callable[..., typing.Any]](
     module: ModuleType, name: str, decorator: typing.Callable[[F], F]
-) -> typing.Iterator[F]:
+) -> typing.Generator[F]:
     """Replace `module.name` with `decorator(module.name)` so recursive calls go through it too."""
     func = decorator(getattr(module, name))
     with patch.object(module, name, func):
@@ -76,8 +77,8 @@ def patched[F: typing.Callable[..., typing.Any]](
 def tracked(
     module: ModuleType,
     name: str,
-    weight: typing.Callable[..., int] = lambda *args, **kwargs: 1,
-) -> typing.Iterator[RecursionStats]:
+    weight: typing.Callable[..., int] = lambda *_, **__: 1,
+) -> typing.Generator[RecursionStats]:
     with patched(module, name, track_recursion(weight)) as func:
         yield func.stats
 
@@ -138,3 +139,30 @@ def select_first_with(selector: BiedgeSelector):
         return wrapper
 
     return decorator
+
+
+REALIZATION_COUNTING_REC = "_number_of_plane_realizations_min_rigid_dim_2_rec"
+
+
+def measure_realization_counting(
+    graphs: typing.Iterable[pyrigi.Graph], selector: BiedgeSelector | None = None
+) -> pl.DataFrame:
+    """Measure pyrigi's `number_of_realizations`, optionally overriding its biedge selection.
+
+    Recursion calls are weighted by the number of biedges on input.
+    """
+    with ExitStack() as stack:
+        stats = stack.enter_context(
+            tracked(
+                rc,
+                REALIZATION_COUNTING_REC,
+                weight=lambda bigraph, *_, **__: len(bigraph),
+            )
+        )
+        if selector is not None:
+            stack.enter_context(
+                patched(rc, REALIZATION_COUNTING_REC, select_first_with(selector))
+            )
+        return measurements_to_dataframe(
+            measure_graph_function(graphs, rc.number_of_realizations, stats)
+        )
