@@ -1058,7 +1058,7 @@ wheels = [
 [[package]]
 name = "pyrigi"
 version = "1.3.0"
-source = { git = "https://github.com/bonimart/PyRigi?branch=main#98164714b0320b2ed662b9dd391f0b41c608632b" }
+source = { git = "https://github.com/bonimart/PyRigi?branch=main#8d07f2a46fe390377676f8b422c3a8e67858d28c" }
 dependencies = [
     { name = "contourpy" },
     { name = "distinctipy" },
