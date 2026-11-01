@@ -166,3 +166,15 @@ def measure_realization_counting(
         return measurements_to_dataframe(
             measure_graph_function(graphs, rc.number_of_realizations, stats)
         )
+
+
+def reduced_graph(graph: pyrigi.Graph) -> pyrigi.Graph | None:
+    """The graph pyrigi builds its root bigraph from (degree-2 vertices removed), so biedge `i` is its `i`-th edge.
+
+    None if pyrigi never reaches the recursion for this graph.
+    """
+    with patch.object(
+        rc, "_graph_to_bigraph", wraps=rc._graph_to_bigraph
+    ) as to_bigraph:
+        rc.number_of_realizations(graph)
+    return to_bigraph.call_args.args[0] if to_bigraph.called else None
