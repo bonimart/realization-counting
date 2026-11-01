@@ -89,6 +89,7 @@ class Measurement:
     function_result: typing.Any
     execution_time_ms: float
     recursion_stats: RecursionStats
+    counts: dict[str, int] = field(default_factory=dict)
 
 
 def measure_graph_function(
@@ -96,11 +97,18 @@ def measure_graph_function(
     func: typing.Callable[[pyrigi.Graph], typing.Any],
     stats: RecursionStats,
     limit: int | None = None,
+    counters: dict[str, RecursionStats] | None = None,
 ) -> list[Measurement]:
-    """Time `func` on each graph and record the recursion stats it produced."""
+    """Time `func` on each graph and record the recursion stats it produced.
+
+    `counters` are stats of helper functions; only their call counts are recorded.
+    """
+    counters = counters or {}
     measurements = []
     for graph in itertools.islice(graphs, limit):
         stats.reset()
+        for counter in counters.values():
+            counter.reset()
         start_time = time.perf_counter()
         func_result = func(graph)
         exec_time = time.perf_counter() - start_time
@@ -110,17 +118,21 @@ def measure_graph_function(
                 function_result=func_result,
                 execution_time_ms=exec_time * 1_000,
                 recursion_stats=stats.export(),
+                counts={name: c.calls for name, c in counters.items()},
             )
         )
     return measurements
 
 
 def measurements_to_dataframe(measurements: list[Measurement]) -> pl.DataFrame:
-    return (
-        pl.DataFrame([asdict(m) for m in measurements])
-        .unnest("recursion_stats")
-        .drop("_depth")  # internal counter, always 0 after a call returns
-    )
+    rows = []
+    for m in measurements:
+        row = asdict(m)
+        row.update(row.pop("recursion_stats"))
+        row.update(row.pop("counts"))
+        del row["_depth"]  # internal counter, always 0 after a call returns
+        rows.append(row)
+    return pl.DataFrame(rows)
 
 
 def select_first_with(selector: BiedgeSelector):
@@ -142,6 +154,9 @@ def select_first_with(selector: BiedgeSelector):
 
 
 REALIZATION_COUNTING_REC = "_number_of_plane_realizations_min_rigid_dim_2_rec"
+# called once per step of the split enumeration in `_splits_without_loops`
+SPLIT_STEP = "_has_loop_after_split"
+LAMAN_CHECK = "_bigraph_is_pseudo_laman"
 
 
 def measure_realization_counting(
@@ -150,6 +165,7 @@ def measure_realization_counting(
     """Measure pyrigi's `number_of_realizations`, optionally overriding its biedge selection.
 
     Recursion calls are weighted by the number of biedges on input.
+    `split_steps` counts steps of the split enumeration, `laman_checks` pseudo-Laman checks.
     """
     with ExitStack() as stack:
         stats = stack.enter_context(
@@ -159,12 +175,18 @@ def measure_realization_counting(
                 weight=lambda bigraph, *_, **__: len(bigraph),
             )
         )
+        counters = {
+            "split_steps": stack.enter_context(tracked(rc, SPLIT_STEP)),
+            "laman_checks": stack.enter_context(tracked(rc, LAMAN_CHECK)),
+        }
         if selector is not None:
             stack.enter_context(
                 patched(rc, REALIZATION_COUNTING_REC, select_first_with(selector))
             )
         return measurements_to_dataframe(
-            measure_graph_function(graphs, rc.number_of_realizations, stats)
+            measure_graph_function(
+                graphs, rc.number_of_realizations, stats, counters=counters
+            )
         )
 
 
