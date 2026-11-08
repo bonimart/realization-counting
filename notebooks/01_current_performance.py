@@ -11,17 +11,16 @@ def _(mo):
 
     This notebook measures execution time of the existing `number_of_realizations` function from `pyrigi`.
     """)
-    return
 
 
 @app.cell
 def _():
     import altair as alt
     import marimo as mo
-    import polars as pl
     import matplotlib.pyplot as plt
-
+    import polars as pl
     import pyrigi
+
     from realization_counting.edge_selection import SELECTOR_FACTORIES
     from realization_counting.measure import measure_realization_counting, reduced_graph
     from realization_counting.measurement_helpers import measurements_path
@@ -92,13 +91,11 @@ def _(df, mo):
     mo.md(f"""
     Total execution time: {df.select("execution_time_ms").sum().item() / 1000:.2f} s
     """)
-    return
 
 
 @app.cell
 def _(df):
     df.select("execution_time_ms").describe()
-    return
 
 
 @app.cell
@@ -112,7 +109,6 @@ def _(alt, df):
         ),
         y="count()",
     ).interactive()
-    return
 
 
 @app.cell(hide_code=True)
@@ -126,7 +122,6 @@ def _(mo):
 
     Intuitively, edge selection in early recursion calls (with bigger bigraphs) should have bigger impact on execution time.
     """)
-    return
 
 
 @app.cell
@@ -134,7 +129,6 @@ def _(df):
     df.select(
         ["function_result", "execution_time_ms", "calls", "weighted", "max_depth"]
     ).corr(label="cols").select(["cols", "execution_time_ms"])
-    return
 
 
 @app.cell
@@ -146,7 +140,6 @@ def _(alt, df):
     c3 = base.encode(x="function_result", y="execution_time_ms")
 
     (c1 | c2 | c3).interactive()
-    return
 
 
 @app.cell(hide_code=True)
@@ -160,7 +153,6 @@ def _(mo):
     2. Selecting last edge
     3. Selecting a random edge
     """)
-    return
 
 
 @app.cell
@@ -173,7 +165,6 @@ def _(measurements_df, pl):
         mean_weighted=pl.col("weighted").mean(),
         mean_calls=pl.col("calls").mean(),
     )
-    return
 
 
 @app.cell(expand_output=True)
@@ -190,7 +181,6 @@ def _(alt, measurements_df):
         y="count()",
         row=alt.Row("selector:N", title="Edge selection"),
     ).interactive()
-    return
 
 
 @app.cell(hide_code=True)
@@ -200,7 +190,6 @@ def _(mo):
 
     Random selection performs consistently worse than the first selection, last selection performs a little worse in the mean, but there are some cases when it is much better than first selection.
     """)
-    return
 
 
 @app.cell(expand_output=True)
@@ -208,7 +197,7 @@ def _(alt, measurements_df, selectors):
     per_graph_df = measurements_df.pivot(
         "selector", index="graph_id", values="execution_time_ms"
     ).unpivot(
-        [selector for selector in selectors.keys() if selector is not "first"],
+        [selector for selector in selectors if selector != "first"],
         index=["graph_id", "first"],
         variable_name="selector",
         value_name="execution_time_ms",
@@ -232,7 +221,6 @@ def _(alt, measurements_df, selectors):
         column=alt.Column("selector:N", title="Edge selection vs. first edge"),
         title="Per-graph execution time compared to first edge selection",
     ).interactive()
-    return
 
 
 @app.cell(hide_code=True)
@@ -248,7 +236,6 @@ def _(mo):
     - 1315206214433 - first significantly outperforms last
     - 27523242111198 - last significantly outperforms first
     """)
-    return
 
 
 @app.cell
@@ -286,7 +273,6 @@ def _(graph, plt, root_edges):
     # first root biedge red, last green
     graph.plot(edge_colors_custom={"red": [root_edges[0]], "green": [root_edges[-1]]})
     plt.gca()
-    return
 
 
 @app.cell
@@ -297,7 +283,6 @@ def _(graph, measure_realization_counting, pl, selectors):
         )
         for name, selector in selectors.items()
     ).select("selector", "execution_time_ms", "calls", "weighted", "max_depth")
-    return
 
 
 if __name__ == "__main__":

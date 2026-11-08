@@ -154,8 +154,6 @@ def select_first_with(selector: BiedgeSelector):
 
 
 REALIZATION_COUNTING_REC = "_number_of_plane_realizations_min_rigid_dim_2_rec"
-# called once per step of the split enumeration in `_splits_without_loops`
-SPLIT_STEP = "_has_loop_after_split"
 LAMAN_CHECK = "_bigraph_is_pseudo_laman"
 
 
@@ -176,7 +174,6 @@ def measure_realization_counting(
             )
         )
         counters = {
-            "split_steps": stack.enter_context(tracked(rc, SPLIT_STEP)),
             "laman_checks": stack.enter_context(tracked(rc, LAMAN_CHECK)),
         }
         if selector is not None:
