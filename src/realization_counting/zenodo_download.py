@@ -67,8 +67,12 @@ def download_min_rigid_graphs(
             if not file.name.startswith("LamanGraphs"):
                 continue
 
-            print(f"Downloading: {file.name} ({file.size / (1024 * 1024):.2f} MB)")
             destination_path = output_dir / file.name
+            if (destination_path).exists():
+                print(f"{destination_path} already exists, skipping download")
+                continue
+
+            print(f"Downloading: {file.name} ({file.size / (1024 * 1024):.2f} MB)")
             _download_file(file, destination_path, client)
             print(f"Successfully saved to {destination_path}")
 
