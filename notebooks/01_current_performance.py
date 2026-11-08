@@ -79,8 +79,7 @@ def _(
     n_nodes_slider,
     read_graphs_up_to,
 ):
-    if not Path("data/").exists():
-        download_min_rigid_graphs()
+    download_min_rigid_graphs()
     try:
         graphs = filter_zero_deletions(read_graphs_up_to(n_nodes_slider.value))
     except FileNotFoundError as e:
@@ -180,13 +179,7 @@ def _(mo):
 @app.cell
 def _(df):
     df.select(
-        [
-            "function_result",
-            "execution_time_ms",
-            "calls",
-            "weighted",
-            "max_depth"
-        ]
+        ["function_result", "execution_time_ms", "calls", "weighted", "max_depth"]
     ).corr(label="cols").select(["cols", "execution_time_ms"])
     return
 
@@ -225,7 +218,7 @@ def _(measurements_df, pl):
         median_time_ms=pl.col("execution_time_ms").median(),
         max_time_ms=pl.col("execution_time_ms").max(),
         mean_weighted=pl.col("weighted").mean(),
-        mean_calls=pl.col("calls").mean()
+        mean_calls=pl.col("calls").mean(),
     )
     return
 
@@ -259,17 +252,27 @@ def _(mo):
 
 @app.cell(expand_output=True)
 def _(alt, measurements_df, selectors):
-    per_graph_df = (
-        measurements_df.pivot("selector", index="graph_id", values="execution_time_ms")
-        .unpivot([selector for selector in selectors.keys() if selector is not "first"], index=["graph_id", "first"], variable_name="selector", value_name="execution_time_ms")
+    per_graph_df = measurements_df.pivot(
+        "selector", index="graph_id", values="execution_time_ms"
+    ).unpivot(
+        [selector for selector in selectors.keys() if selector is not "first"],
+        index=["graph_id", "first"],
+        variable_name="selector",
+        value_name="execution_time_ms",
     )
     _x = alt.X("first", title="First edge execution time [ms]")
-    _points = alt.Chart().mark_point().encode(
-        x=_x,
-        y=alt.Y("execution_time_ms", title="Execution time [ms]"),
-        tooltip=["graph_id:N", "selector:N", "first", "execution_time_ms"],
+    _points = (
+        alt.Chart()
+        .mark_point()
+        .encode(
+            x=_x,
+            y=alt.Y("execution_time_ms", title="Execution time [ms]"),
+            tooltip=["graph_id:N", "selector:N", "first", "execution_time_ms"],
+        )
     )
-    _diagonal = alt.Chart().mark_line(color="gray", strokeDash=[4, 4]).encode(x=_x, y="first")
+    _diagonal = (
+        alt.Chart().mark_line(color="gray", strokeDash=[4, 4]).encode(x=_x, y="first")
+    )
     alt.layer(_points, _diagonal, data=per_graph_df).properties(
         width=500, height=500
     ).facet(
@@ -317,7 +320,10 @@ def _(last_best_id, last_worst_id, mo):
 def _(graph_id_input, mo, pyrigi, reduced_graph):
     graph = pyrigi.Graph.from_int(graph_id_input.value)
     reduced = reduced_graph(graph)
-    mo.stop(reduced is None, mo.callout("pyrigi does not recurse on this graph", kind="warn"))
+    mo.stop(
+        reduced is None,
+        mo.callout("pyrigi does not recurse on this graph", kind="warn"),
+    )
     root_edges = list(reduced.edges)
     return graph, root_edges
 
@@ -333,7 +339,9 @@ def _(graph, plt, root_edges):
 @app.cell
 def _(graph, measure_realization_counting, pl, selectors):
     pl.concat(
-        measure_realization_counting([graph], selector).with_columns(selector=pl.lit(name))
+        measure_realization_counting([graph], selector).with_columns(
+            selector=pl.lit(name)
+        )
         for name, selector in selectors.items()
     ).select("selector", "execution_time_ms", "calls", "weighted", "max_depth")
     return
