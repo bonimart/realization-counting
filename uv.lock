@@ -1176,11 +1176,15 @@ dependencies = [
     { name = "httpx" },
     { name = "marimo" },
     { name = "polars" },
-    { name = "prek" },
     { name = "pynauty" },
     { name = "pyrigi" },
-    { name = "ruff" },
     { name = "tqdm" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "prek" },
+    { name = "ruff" },
     { name = "ty" },
 ]
 
@@ -1190,12 +1194,16 @@ requires-dist = [
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "marimo", specifier = ">=0.24.2" },
     { name = "polars", specifier = ">=1.44.2" },
-    { name = "prek", specifier = ">=0.5.3" },
     { name = "pynauty", specifier = ">=2.8.8.1" },
     { name = "pyrigi", git = "https://github.com/bonimart/PyRigi?branch=main" },
-    { name = "ruff", specifier = ">=0.16.8" },
     { name = "tqdm", specifier = ">=4.70.1" },
-    { name = "ty", specifier = ">=0.0.83" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "prek", specifier = ">=0.5.4" },
+    { name = "ruff", specifier = ">=0.16.9" },
+    { name = "ty", specifier = ">=0.0.84" },
 ]
 
 [[package]]
