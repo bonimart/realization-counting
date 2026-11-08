@@ -7,6 +7,12 @@ import pyrigi
 from pyrigi.graph._general import min_degree
 
 
+def measurements_path(
+    selector_name: str, max_node_count: int, dir: Path = Path("data")
+) -> Path:
+    return dir / f"measurements_{selector_name}_{max_node_count}.csv"
+
+
 def read_graphs_from_nums(
     filepath: Path, node_count: int
 ) -> typing.Iterator[pyrigi.Graph]:
@@ -45,7 +51,7 @@ def read_graphs_up_to(
         yield from read_graphs_from_nums(dir / f"LamanGraphs{n}.txt", n)
 
 
-def filter_zero_deletions(graphs: typing.Iterable[nx.Graph]) -> list[nx.Graph]:
+def filter_zero_deletions(graphs: typing.Iterable[pyrigi.Graph]) -> list[pyrigi.Graph]:
     """Filters out minimally rigid graphs constructed solely by 0-expansion."""
     return [
         graph

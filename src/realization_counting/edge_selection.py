@@ -1,6 +1,7 @@
 import random
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
+from collections.abc import Callable
 
 from realization_counting.bigraph import BiedgeId, Bigraph
 
@@ -31,8 +32,8 @@ class LastBiedgeSelector(BiedgeSelector):
 class ScoredBiedgeSelector(BiedgeSelector):
     """Select the biedge with the lowest score, ties go to the lower index.
 
-    Bigraphs with fewer than `min_biedges` biedges keep the first biedge,
-    since scoring may not pay off on small inputs.
+    For bigraphs with fewer than `min_biedges` biedges, the first biedge is selected
+    as score calculation may not pay off on smaller inputs.
     """
 
     def __init__(self, min_biedges: int = 0) -> None:
@@ -83,3 +84,15 @@ class LowestDegreeBiedgeSelector(ScoredBiedgeSelector):
             side.degree[node] for edge, side in zip(biedge, sides) for node in edge
         )
         return (min_degree, _triangles(biedge, sides))
+
+
+# Factories, so each measurement starts from a fresh random state.
+# None keeps pyrigi's own selection, which takes the first biedge.
+# Heuristics only pay off on bigger bigraphs, smaller ones keep the first biedge.
+SELECTOR_FACTORIES: dict[str, Callable[[], BiedgeSelector | None]] = {
+    "first": lambda: None,
+    "last": LastBiedgeSelector,
+    "random": lambda: RandomBiedgeSelector(seed=0),
+    "fewest_triangles": lambda: FewestTrianglesBiedgeSelector(min_biedges=10),
+    "lowest_degree": lambda: LowestDegreeBiedgeSelector(min_biedges=10),
+}

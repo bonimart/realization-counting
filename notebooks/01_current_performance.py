@@ -16,42 +16,25 @@ def _(mo):
 
 @app.cell
 def _():
-    from pathlib import Path
-
     import altair as alt
     import marimo as mo
     import polars as pl
     import matplotlib.pyplot as plt
 
     import pyrigi
-    from realization_counting.edge_selection import (
-        FewestTrianglesBiedgeSelector,
-        LastBiedgeSelector,
-        LowestDegreeBiedgeSelector,
-        RandomBiedgeSelector,
-    )
+    from realization_counting.edge_selection import SELECTOR_FACTORIES
     from realization_counting.measure import measure_realization_counting, reduced_graph
-    from realization_counting.measurement_helpers import (
-        filter_zero_deletions,
-        read_graphs_up_to,
-    )
-    from realization_counting.zenodo_download import download_min_rigid_graphs
+    from realization_counting.measurement_helpers import measurements_path
 
     return (
-        FewestTrianglesBiedgeSelector,
-        LastBiedgeSelector,
-        LowestDegreeBiedgeSelector,
-        Path,
-        RandomBiedgeSelector,
+        SELECTOR_FACTORIES,
         alt,
-        download_min_rigid_graphs,
-        filter_zero_deletions,
         measure_realization_counting,
+        measurements_path,
         mo,
         pl,
         plt,
         pyrigi,
-        read_graphs_up_to,
         reduced_graph,
     )
 
@@ -71,64 +54,34 @@ def _(mo):
 
 
 @app.cell
-def _(
-    Path,
-    download_min_rigid_graphs,
-    filter_zero_deletions,
-    mo,
-    n_nodes_slider,
-    read_graphs_up_to,
-):
-    download_min_rigid_graphs()
-    try:
-        graphs = filter_zero_deletions(read_graphs_up_to(n_nodes_slider.value))
-    except FileNotFoundError as e:
-        mo.stop(
-            True,
-            mo.callout(f"Could not read minimally rigid graph files {e}", kind="warn"),
-        )
-    return (graphs,)
-
-
-@app.cell
-def _(
-    FewestTrianglesBiedgeSelector,
-    LastBiedgeSelector,
-    LowestDegreeBiedgeSelector,
-    RandomBiedgeSelector,
-):
-    # None keeps pyrigi's own selection, which takes the first biedge
-    # heuristics only pay off on bigger bigraphs, smaller ones keep the first biedge
-    selectors = {
-        "first": None,
-        "last": LastBiedgeSelector(),
-        "random": RandomBiedgeSelector(seed=0),
-        "fewest_triangles": FewestTrianglesBiedgeSelector(min_biedges=10),
-        "lowest_degree": LowestDegreeBiedgeSelector(min_biedges=10),
-    }
+def _(SELECTOR_FACTORIES):
+    selectors = {name: factory() for name, factory in SELECTOR_FACTORIES.items()}
     return (selectors,)
 
 
 @app.cell
-def _(
-    Path,
-    graphs,
-    measure_realization_counting,
-    n_nodes_slider,
-    pl,
-    selectors,
-):
-    def measure_cached(name, selector):
-        fname = Path(f"data/measurements_{name}_{n_nodes_slider.value}.csv")
-        if fname.exists():
-            return pl.read_csv(fname)
-        result = measure_realization_counting(graphs, selector)
-        result.write_csv(fname)
-        return result
+def _(measurements_path, mo, n_nodes_slider, pl, selectors):
+    _missing = [
+        name
+        for name in selectors
+        if not measurements_path(name, n_nodes_slider.value).exists()
+    ]
+    mo.stop(
+        bool(_missing),
+        mo.callout(
+            mo.md(
+                f"Missing measurements for selectors: {', '.join(_missing)}. Generate them with "
+                f"`uv run scripts/measure_realization_counting.py --max-nodes {n_nodes_slider.value} --selector <selector>`."
+            ),
+            kind="warn",
+        ),
+    )
 
     measurements_df = pl.concat(
-        measure_cached(name, selector).with_columns(selector=pl.lit(name))
-        for name, selector in selectors.items()
+        pl.read_csv(measurements_path(name, n_nodes_slider.value)).with_columns(
+            selector=pl.lit(name)
+        )
+        for name in selectors
     )
     df = measurements_df.filter(pl.col("selector") == "first")
     return df, measurements_df
