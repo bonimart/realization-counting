@@ -15,4 +15,5 @@ FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 WORKDIR /app
 COPY --from=builder /app /app
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["python", "notebooks/01_current_performance.py"]
+ENTRYPOINT ["python"]
+CMD ["scripts/measure_realization_counting.py", "--help"]
