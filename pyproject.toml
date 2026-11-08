@@ -20,7 +20,7 @@ requires = ["uv_build>=0.13.7,<0.14.0"]
 build-backend = "uv_build"
 
 [tool.uv.sources]
-pyrigi = { git = "https://github.com/bonimart/PyRigi", branch = "main" }
+pyrigi = { git = "https://github.com/bonimart/PyRigi", branch = "trivial-optimization" }
 
 [dependency-groups]
 dev = ["prek>=0.5.4", "ruff>=0.16.9", "ty>=0.0.84"]

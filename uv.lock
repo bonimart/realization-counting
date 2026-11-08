@@ -1058,7 +1058,7 @@ wheels = [
 [[package]]
 name = "pyrigi"
 version = "1.3.0"
-source = { git = "https://github.com/bonimart/PyRigi?branch=main#4dfb435260a7417fb4b2c5ab0bc1d434d2618d41" }
+source = { git = "https://github.com/bonimart/PyRigi?branch=trivial-optimization#243b5529bea9dc126a179c1a83567360eaf14acd" }
 dependencies = [
     { name = "contourpy" },
     { name = "distinctipy" },
@@ -1195,7 +1195,7 @@ requires-dist = [
     { name = "marimo", specifier = ">=0.24.2" },
     { name = "polars", specifier = ">=1.44.2" },
     { name = "pynauty", specifier = ">=2.8.8.1" },
-    { name = "pyrigi", git = "https://github.com/bonimart/PyRigi?branch=main" },
+    { name = "pyrigi", git = "https://github.com/bonimart/PyRigi?branch=trivial-optimization" },
     { name = "tqdm", specifier = ">=4.70.1" },
 ]
 
