@@ -22,7 +22,7 @@ def _():
     import pyrigi
 
     from realization_counting.edge_selection import SELECTOR_FACTORIES
-    from realization_counting.measure import measure_realization_counting, reduced_graph
+    from realization_counting.measure import measure_realization_counting
     from realization_counting.measurement_helpers import measurements_path
 
     return (
@@ -34,7 +34,6 @@ def _():
         pl,
         plt,
         pyrigi,
-        reduced_graph,
     )
 
 
@@ -257,14 +256,9 @@ def _(last_best_id, last_worst_id, mo):
 
 
 @app.cell
-def _(graph_id_input, mo, pyrigi, reduced_graph):
+def _(graph_id_input, pyrigi):
     graph = pyrigi.Graph.from_int(graph_id_input.value)
-    reduced = reduced_graph(graph)
-    mo.stop(
-        reduced is None,
-        mo.callout("pyrigi does not recurse on this graph", kind="warn"),
-    )
-    root_edges = list(reduced.edges)
+    root_edges = list(graph.edges)
     return graph, root_edges
 
 
