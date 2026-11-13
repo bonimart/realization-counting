@@ -22,14 +22,12 @@ def _():
     import pyrigi
 
     from realization_counting.edge_selection import SELECTOR_FACTORIES
-    from realization_counting.measure import measure_realization_counting
-    from realization_counting.measurement_helpers import measurements_path
+    from realization_counting.measure.experiment import measure_realization_counting
 
     return (
         SELECTOR_FACTORIES,
         alt,
         measure_realization_counting,
-        measurements_path,
         mo,
         pl,
         plt,

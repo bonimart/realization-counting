@@ -9,6 +9,8 @@ from pathlib import Path
 import httpx
 from tqdm import tqdm
 
+from realization_counting.min_rigid_graphs.paths import DATA_DIR
+
 
 @dataclass
 class ZenodoFile:
@@ -48,9 +50,10 @@ def _extract_zip(zip_path: Path, output_dir: Path):
 
 
 def download_min_rigid_graphs(
-    url: str = "https://zenodo.org/api/records/1245517", output_dir: Path = Path("data")
+    url: str = "https://zenodo.org/api/records/1245517",
+    output_dir: Path = DATA_DIR,
 ):
-    headers = {"User-Agend": "ZenodoDownloader/1.0"}
+    headers = {"User-Agent": "ZenodoDownloader/1.0"}
 
     with httpx.Client(headers=headers) as client:
         response = client.get(url)

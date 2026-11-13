@@ -1,15 +1,14 @@
 """Measure pyrigi's realization counting on minimally 2-rigid graphs and save the results to a CSV."""
 
 import argparse
+from functools import partial
+from pathlib import Path
 
 from realization_counting.edge_selection import SELECTOR_FACTORIES
-from realization_counting.measure import measure_realization_counting
-from realization_counting.measurement_helpers import (
-    filter_zero_deletions,
-    measurements_path,
-    read_graphs_up_to,
-)
-from realization_counting.zenodo_download import download_min_rigid_graphs
+from realization_counting.measure.experiment import measure_realization_counting
+from realization_counting.measure.preprocess import has_no_zero_extension, preprocess
+from realization_counting.min_rigid_graphs.download import download_min_rigid_graphs
+from realization_counting.min_rigid_graphs.load import read_min_rigid_graphs
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,13 +33,15 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.save:
-        output = measurements_path(args.selector, args.max_nodes)
+        output = Path("x")
         if output.exists():
             print(f"{output} already exists, skipping measurement")
             return
 
     download_min_rigid_graphs()
-    graphs = filter_zero_deletions(read_graphs_up_to(args.max_nodes))
+    graphs = preprocess(
+        read_min_rigid_graphs(args.max_nodes), partial(filter, has_no_zero_extension)
+    )
     print(f"Measuring {len(graphs)} graphs with selector {args.selector}")
     results = measure_realization_counting(graphs, SELECTOR_FACTORIES[args.selector]())
 
