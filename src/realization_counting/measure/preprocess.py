@@ -7,15 +7,17 @@ from pyrigi.graph._general import min_degree
 GraphPreprocessor = Callable[[Iterable[pyrigi.Graph]], Iterator[pyrigi.Graph]]
 
 
-def preprocess(graphs: Iterable[pyrigi.Graph], *steps: GraphPreprocessor):
+def preprocess(
+    graphs: Iterable[pyrigi.Graph], *steps: GraphPreprocessor
+) -> Iterator[pyrigi.Graph]:
     """Applies preprocessing to input graphs."""
     for step in steps:
         graphs = step(graphs)
-    return graphs
+    return iter(graphs)
 
 
 def has_no_zero_extension(graph: pyrigi.Graph) -> bool:
-    """Return whether a graph contains a 0-extension."""
+    """True if graph contains no 0-extension."""
     return graph.number_of_nodes() > 2 and min_degree(graph) > 2
 
 

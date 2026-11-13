@@ -39,8 +39,11 @@ def main() -> None:
             return
 
     download_min_rigid_graphs()
-    graphs = preprocess(
-        read_min_rigid_graphs(args.max_nodes), partial(filter, has_no_zero_extension)
+    graphs = list(
+        preprocess(
+            read_min_rigid_graphs(args.max_nodes),
+            partial(filter, has_no_zero_extension),
+        )
     )
     print(f"Measuring {len(graphs)} graphs with selector {args.selector}")
     results = measure_realization_counting(graphs, SELECTOR_FACTORIES[args.selector]())

@@ -18,6 +18,7 @@ class ZenodoFile:
     url: str
     size: int
 
+    @staticmethod
     def from_file_info(file_info: dict) -> ZenodoFile:
         return ZenodoFile(
             name=file_info["key"],
