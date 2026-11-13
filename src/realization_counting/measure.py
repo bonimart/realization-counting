@@ -57,7 +57,7 @@ def track_recursion[**P, R](
             finally:
                 stats._depth -= 1
 
-        wrapper.stats = stats  # ty: ignore[unresolved-attribute]
+        wrapper.stats = stats  # ty: ignore[missing-attribute]
         return typing.cast(TrackedFunction[P, R], wrapper)
 
     return decorator

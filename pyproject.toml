@@ -23,4 +23,4 @@ build-backend = "uv_build"
 pyrigi = { git = "https://github.com/bonimart/PyRigi", branch = "dev" }
 
 [dependency-groups]
-dev = ["prek>=0.5.4", "ruff>=0.16.9", "ty>=0.0.84"]
+dev = ["prek>=0.5.4", "ruff>=0.17.4", "ty>=0.0.100"]
