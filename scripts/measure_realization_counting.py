@@ -27,23 +27,26 @@ def parse_args() -> argparse.Namespace:
         choices=SELECTOR_FACTORIES,
         help="function picking the biedge to branch on",
     )
+    parser.add_argument("--save", action="store_true", help="store results to a file")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    output = measurements_path(args.selector, args.max_nodes)
-    if output.exists():
-        print(f"{output} already exists, skipping measurement")
-        return
+    if args.save:
+        output = measurements_path(args.selector, args.max_nodes)
+        if output.exists():
+            print(f"{output} already exists, skipping measurement")
+            return
 
     download_min_rigid_graphs()
     graphs = filter_zero_deletions(read_graphs_up_to(args.max_nodes))
     print(f"Measuring {len(graphs)} graphs with selector {args.selector}")
-    measure_realization_counting(graphs, SELECTOR_FACTORIES[args.selector]()).write_csv(
-        output
-    )
-    print(f"Saved measurements to {output}")
+    results = measure_realization_counting(graphs, SELECTOR_FACTORIES[args.selector]())
+
+    if args.save:
+        results.write_csv(output)
+        print(f"Saved measurements to {output}")
 
 
 if __name__ == "__main__":
