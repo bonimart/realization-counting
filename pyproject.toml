@@ -23,4 +23,8 @@ build-backend = "uv_build"
 pyrigi = { git = "https://github.com/bonimart/PyRigi", branch = "dev" }
 
 [dependency-groups]
-dev = ["prek>=0.5.4", "ruff>=0.17.4", "ty>=0.0.100"]
+dev = ["prek>=0.5.4", "pytest>=9.2.0", "ruff>=0.17.4", "ty>=0.0.100"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["--import-mode=importlib"]
