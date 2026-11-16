@@ -1,0 +1,7 @@
+# Measures the effect of shuffling using selectors first, last, and fewest triangles
+command = "scripts/measure_realization_counting.py"
+
+[grid]
+max_nodes = [8]
+selector = ["first", "last", "fewest_triangles"]
+shuffle = [true, false]

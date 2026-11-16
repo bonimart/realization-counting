@@ -32,18 +32,12 @@ def parse_args() -> argparse.Namespace:
         help="function picking the biedge to branch on",
     )
     parser.add_argument("--shuffle", action="store_true", help="shuffle nodes")
-    parser.add_argument("--save", action="store_true", help="store results to a file")
+    parser.add_argument("--output", type=Path, help="CSV file to write results to")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    if args.save:
-        output = Path("x")
-        if output.exists():
-            print(f"{output} already exists, skipping measurement")
-            return
-
     download_min_rigid_graphs()
     preprocessing = [partial(filter, has_no_zero_extension)]
     if args.shuffle:
@@ -54,9 +48,10 @@ def main() -> None:
     print(f"Measuring {len(graphs)} graphs with selector {args.selector}")
     results = measure_realization_counting(graphs, SELECTOR_FACTORIES[args.selector]())
 
-    if args.save:
-        results.write_csv(output)
-        print(f"Saved measurements to {output}")
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        results.write_csv(args.output)
+        print(f"Saved measurements to {args.output}")
 
 
 if __name__ == "__main__":
