@@ -1,19 +1,26 @@
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim as builder
+FROM ghcr.io/astral-sh/uv:0.13.7-trixie-slim AS builder
 RUN apt-get update \
-        && apt-get install -y --no-install-recommends git cmake gcc g++ build-essential \
+        && apt-get install -y --no-install-recommends git build-essential \
         && rm -rf /var/lib/apt/lists/*
-COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /uvx /bin/
 WORKDIR /app
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy \
+    UV_PYTHON_PREFERENCE=only-managed UV_PYTHON_INSTALL_DIR=/python
+COPY .python-version ./
+RUN uv python install
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
-COPY . .
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+        uv sync --frozen --no-dev --no-install-project
+COPY README.md ./
+COPY src src
+COPY scripts scripts
+RUN --mount=type=cache,target=/root/.cache/uv \
+        uv sync --frozen --no-dev
 
 
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
-WORKDIR /app
+FROM debian:trixie-slim
+COPY --from=builder /python /python
 COPY --from=builder /app /app
+WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 ENTRYPOINT ["python"]
 CMD ["scripts/measure_realization_counting.py", "--help"]
