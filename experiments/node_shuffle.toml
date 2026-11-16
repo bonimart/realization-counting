@@ -2,6 +2,6 @@
 command = "scripts/measure_realization_counting.py"
 
 [grid]
-max_nodes = [8]
+max_nodes = [10]
 selector = ["first", "last", "fewest_triangles"]
 shuffle = [true, false]
