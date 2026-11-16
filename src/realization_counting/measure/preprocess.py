@@ -27,7 +27,7 @@ def shuffle_nodes(graph: pyrigi.Graph, rng: random.Random) -> pyrigi.Graph:
     pyrigi numbers bigraph nodes by insertion order, so this changes the bigraph.
     """
     nodes = list(graph.nodes)
-    graph = pyrigi.Graph()
-    graph.add_nodes_from(rng.sample(nodes, len(nodes)))
-    graph.add_edges_from(graph.edges)
-    return graph
+    shuffled = pyrigi.Graph()
+    shuffled.add_nodes_from(rng.sample(nodes, len(nodes)))
+    shuffled.add_edges_from(graph.edges)
+    return shuffled

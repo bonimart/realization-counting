@@ -1,12 +1,17 @@
 """Measure pyrigi's realization counting on minimally 2-rigid graphs and save the results to a CSV."""
 
 import argparse
+import random
 from functools import partial
 from pathlib import Path
 
 from realization_counting.edge_selection import SELECTOR_FACTORIES
 from realization_counting.measure.experiment import measure_realization_counting
-from realization_counting.measure.preprocess import has_no_zero_extension, preprocess
+from realization_counting.measure.preprocess import (
+    has_no_zero_extension,
+    preprocess,
+    shuffle_nodes,
+)
 from realization_counting.min_rigid_graphs.download import download_min_rigid_graphs
 from realization_counting.min_rigid_graphs.load import read_min_rigid_graphs
 
@@ -26,6 +31,7 @@ def parse_args() -> argparse.Namespace:
         choices=SELECTOR_FACTORIES,
         help="function picking the biedge to branch on",
     )
+    parser.add_argument("--shuffle", action="store_true", help="shuffle nodes")
     parser.add_argument("--save", action="store_true", help="store results to a file")
     return parser.parse_args()
 
@@ -39,12 +45,12 @@ def main() -> None:
             return
 
     download_min_rigid_graphs()
-    graphs = list(
-        preprocess(
-            read_min_rigid_graphs(args.max_nodes),
-            partial(filter, has_no_zero_extension),
+    preprocessing = [partial(filter, has_no_zero_extension)]
+    if args.shuffle:
+        preprocessing.append(
+            partial(map, partial(shuffle_nodes, rng=random.Random(42)))
         )
-    )
+    graphs = list(preprocess(read_min_rigid_graphs(args.max_nodes), *preprocessing))
     print(f"Measuring {len(graphs)} graphs with selector {args.selector}")
     results = measure_realization_counting(graphs, SELECTOR_FACTORIES[args.selector]())
 
