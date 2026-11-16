@@ -1,6 +1,6 @@
 FROM ghcr.io/astral-sh/uv:0.13.7-trixie-slim AS builder
 RUN apt-get update \
-        && apt-get install -y --no-install-recommends git build-essential \
+        && apt-get install -y --no-install-recommends ca-certificates git build-essential \
         && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy \
